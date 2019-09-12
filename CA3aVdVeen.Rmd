@@ -1,0 +1,176 @@
+---
+title: "CA3aVdVeen"
+author: "Ties van der Veen"
+date: "12-9-2019"
+output: pdf_document
+---
+
+## Rebecca Costello - Ties van der Veen - Niels van Opstal
+
+# I. Introduction to the assignment
+
+## Packages
+```{r}
+options(repos="https://cran.rstudio.com")
+install.packages("jtools")
+install.packages("huxtable")
+install.packages("ggstance")
+install.packages("summarytools")
+install.packages("pwr")
+install.packages("knitr")
+install.packages("lemon")
+install.packages("tinytex")
+install.packages("AER")
+```
+
+```{r}
+library(foreign)
+library(tidyverse)
+library(ggdag)
+library(dplyr)
+library(tinytex)
+library(jtools)
+library(huxtable)
+library(summarytools)
+library(ggstance)
+library(pwr)
+library(knitr)
+library(lemon)
+library(AER)
+```
+
+```{r}
+knit_print.data.frame <- lemon_print
+```
+
+```{r}
+st_options(plain.ascii = FALSE, style = "rmarkdown")
+st_css()
+```
+
+## Data
+
+```{r}
+theUrl_ca3a <- "https://surfdrive.surf.nl/files/index.php/s/aRyyi4GbwUjF9DF/download"
+colonies <- read.dta (file = theUrl_ca3a)
+```
+
+```{r}
+colonies <- colonies[colonies$excolony==1, ]
+colonies <- colonies[is.na(colonies$excolony)==FALSE, ]
+```
+
+
+# II. Potential outcomes
+
+(a) Y(0,i) = low GDP per capita
+    Y(1,i) = high GDP per capita
+
+(b) If colonists came to settle, they brought in institutions that helped the country flourish. If they did the opposite and just extracted resources, these institutions were not established and the country had less of an opportunity to develop. These development differences explain current GDP per capita.
+
+# III. Descriptive statistics
+
+```{r}
+ggplot(colonies, aes(x=as.factor(logpgp95)))+
+  geom_histogram(stat='count', binwidth = "0.5")+
+  labs(x='log GDP per capita', y='number of countries', title='log GDP per capita per country')
+```
+
+```{r}
+summary(is.na(colonies$logpgp95))
+```
+No output, so no missing entries.
+
+# IV. Estimating the treatment effect using an instrumental variable
+
+(a) 
+
+```{r}
+plot(colonies$avexpr, colonies$logpgp95,
+     xlab="Average expropriation risk 1985-95", ylab="log GDP per capita, PPP, 1995",
+     ylim = c(4, 10))
+abline(lm(colonies$logpgp95 ~ colonies$avexpr))
+```
+
+(b)
+
+```{r}
+reg3a1 <- lm(logpgp95 ~ avexpr, data=colonies)
+summ(reg3a1, confint=TRUE)
+```
+
+The regression results suggest a higher GDP per capita for countries with good institutions compared to the countries that don't have good institutions.
+
+(c) 
+
+There are multiple confounding factors that influence this result. Seeing this as a causal relationship would be shortsighted, especially since there's such a gap between the assumed variable's origin (strategy of colonization) and "current' (1995) GDP per capita.
+
+(d)
+
+```{r}
+plot(colonies$logem4, colonies$avexpr,
+     xlab="Log of Settler Mortality", ylab="Average Expropriation Risk 1985-95",
+     ylim = c(4, 10))
+abline(lm(colonies$avexpr ~ colonies$logem4))
+```
+
+(e) 
+
+```{r}
+reg3a2 <- lm(logpgp95 ~ logem4, data=colonies)
+summ(reg3a2, confint=TRUE)
+```
+
+The instrumental variable is statistically significant (p=0.00) as can be seen in the regression output. Economically this variable is not that significant, since there is no causal relationship between mortality in the 1800s and current economic welfare. However, this does not mean that the variable is useless; far from it. It does its job as an instrumental variable.
+
+(f)
+
+```{r}
+reg3a3 <- lm(avexpr ~ logem4, data=colonies)
+summ(reg3a3, confint=TRUE)
+```
+These results show that mortality rate has a sizable effect on settlement strategy, which is what was already predicted. Thus, with the significance reported, these results support the theory.
+
+The F-test reported here gives F=22.95, which is big enough (considering the minimum of 10). 
+
+(g)
+
+```{r}
+avexpr_hat <- predict(reg3a3)
+colonies$pred_avexpr=avexpr_hat
+```
+
+```{r}
+reg3a4 <- lm(logpgp95 ~ pred_avexpr, data=colonies)
+summ(reg3a4, confint=TRUE)
+```
+By taking the prediction of the colonization strategy (avexpr), it seems like almost all of the variation in log GDP per capita (logpgp95) is explained. From (b), which showed an estimate of 0.52, this is a big jump. 
+
+(h)
+
+```{r}
+reg3a5 <- ivreg(logpgp95 ~ avexpr | logem4, data=colonies)
+summary(reg3a5, confint=TRUE, diagnostics=TRUE)
+```
+
+(i) 
+
+```{r}
+reg3a6 <- ivreg(logpgp95 ~ avexpr + lat_abst | lat_abst + logem4, data=colonies)
+summary(reg3a6, confint=TRUE, diagnostics=TRUE)
+```
+
+Including this covariate allows us to control for environmental situations that would give a certain country an advantage (or disadvantage) over the other, creating differences in GDP growth. The new estimation results show that including this covariate makes the colonization strategy (avexpr) able to pretty much explain the whole effect on GDP per capita. 
+
+(j) 
+
+The exclusion restriction means that the independent variables do not directly impact the dependent variables. The instrumental variable is used when this exclusion restriction cannot be guaranteed through randomization. In this case, the instrumental variable "mortality rate of settlers in the 1800s" is unlikely to affect other variables in the study, but can be used to check the independence of the colonization strategy variable. Thus it is likely the effect will hold.
+
+
+
+
+
+
+
+
+
