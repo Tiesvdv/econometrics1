@@ -10,7 +10,7 @@ output: pdf_document
 # I. Introduction to the assignment
 
 ## Packages
-```{r}
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 options(repos="https://cran.rstudio.com")
 install.packages("jtools")
 install.packages("huxtable")
@@ -23,7 +23,7 @@ install.packages("tinytex")
 install.packages("AER")
 ```
 
-```{r}
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 library(foreign)
 library(tidyverse)
 library(ggdag)
