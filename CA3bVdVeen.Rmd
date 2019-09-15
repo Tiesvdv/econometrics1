@@ -1,0 +1,117 @@
+---
+title: "CA3bVdVeen"
+author: "Ties van der Veen"
+date: "15-9-2019"
+output: pdf_document
+---
+
+## Rebecca Costello - Ties van der Veen - Niels van Opstal
+
+# I. Introduction to the assignment
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+library(foreign)
+library(tidyverse)
+library(ggdag)
+library(dplyr)
+library(tinytex)
+library(jtools)
+library(huxtable)
+library(summarytools)
+library(ggstance)
+library(pwr)
+library(knitr)
+library(lemon)
+library(AER)
+```
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+knit_print.data.frame <- lemon_print
+```
+
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+st_options(plain.ascii = FALSE, style = "rmarkdown")
+st_css()
+```
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+theUrl_ca3b <- "https://surfdrive.surf.nl/files/index.php/s/SCE35YQGR4hX6fw/download"
+children <- read.dta (file = theUrl_ca3b)
+```
+
+# II. What to submit
+
+(1) Y(0,i) = labour supply is not reduced (as much)
+    Y(1,i) = labour supply is reduced
+A reason for this additional reduction of labour supply could be that there are more kids to care for by either parent, which is generally a role that falls on the mother. This leads to having less time to spend on her career. Other reasons include physical discomfort of the mother caused by multiple birthings, discrimination by employers and non-change in the behaviour of the husband.
+
+(2) (a)
+
+```{r}
+ggplot(children, aes(x=as.factor(weeksm1)))+
+  geom_histogram(stat='count', binwidth = "1.0")+
+  labs(x='weeks worked', y='number of mothers', title='Amount of weeks worked by mothers')
+```
+
+(b)
+
+```{r}
+ggplot(children, aes(y=weeksm1, x=as.factor(morekids))) + geom_bar(stat="identity", fill='darkblue') +
+  labs(x='amount of children (0=two or fewer, 1= more than two)',
+       y='weeks worked', title='Weeks worked by mothers with a certain number of kids')
+```
+
+(3)
+
+```{r}
+reg3b1 <- lm(weeksm1 ~ morekids, data=children)
+summ(reg3b1, confint=TRUE)
+```
+
+These regression results tell us that having more than two kids would reduce the weeks a mother works by more than 5 on average. 
+
+(4)
+
+The regression above is inappropriate because it fails to tell the whole story. This regression assumes that the one and only reason that women reduce the number of weeks they work is that they have more than two kids. Since there are obviously more reasons to reduce your work hours, it is clear that we are missing certain factors that also have an effect on this outcome. The effects we are missing here are so-called ''omitted variables''. We need to find a way to address these omitted variables to get a more accurate estimate of this effect.
+
+(5)
+
+```{r}
+reg3b2 <- lm(morekids ~ samesex, data=children)
+summ(reg3b2, confint=TRUE)
+```
+
+The regression results show a significant effect, yet the effect itself is very small. So parents whose first two kids were the same sex are more likely to have a 3rd (or more), but only by a small margin.
+
+(6)
+
+For a variable to be valid to serve as an instrumental variable for a certain measurement, it needs to fulfill both the independence assumption and the exclusion restriction. The independence assumption requires that the IV and the dependent variable do not have a common cause. In this case, the sex of the first two children and the amount of weeks a mother decides to work are not influenced by the same factor. The exclusion restriction requires that the IV does not have an effect on the dependent variable other than through the independent variable. In this case, the sex of the first two children should not have an effect on the hours worked by the mother, other than through the number of children she has. 
+
+(7)
+
+```{r}
+reg3b3 <- ivreg(weeksm1 ~ morekids | samesex, data=children)
+summary(reg3b3, confint=TRUE)
+```
+
+In this regression we see the same direction of the effect as seen earlier, but the size of the effect is considerably stronger. Thus, having more children still reduces the amount of labour the mother supplies, but even more than assumed before.
+
+(8)
+
+Never-takers and always-takers are difficult to theorize in this relationship. Always-takers are people who are assigned to the control group, but take the treatment. In this case that would mean they underreported the number of children they have. Inversely we have the never-takers, who should take the treatment (have more than 2 children) but don't, so they overreported the number of children they have. Both of these instances seem weird, but could have happened due to simple mistakes. It's unlikely that people actually forgot how many children they have, so it seems unlikely to me that never-takers or always-takers would significantly change the results.
+
+(9)
+
+```{r}
+reg3b4 <- ivreg(weeksm1 ~ morekids + agem1 + black + hispan + othrace |
+                  agem1 + black + hispan + othrace + samesex, data=children)
+summary(reg3b4, confint=TRUE)
+```
+
+Here we see that the included covariates and IV reduce the effect a bit from the previous regression we did. It is now close to the very first estimate. We also see that the age of the mother, the mother being black and the mother being non-black, non-hispanic or non-white are significant factors. Apparently these factors alleviate the effect of having more kids on the mother's working hours somewhat. 
+
+
+
+
+
+
