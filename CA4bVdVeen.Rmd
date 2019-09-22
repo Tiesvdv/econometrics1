@@ -1,0 +1,146 @@
+---
+title: "CA4bVdVeen"
+author: "Ties van der Veen"
+date: "22-9-2019"
+output: pdf_document
+---
+
+## Rebecca Costello - Ties van der Veen - Niels van Opstal
+
+# I. Introduction to the assignment
+
+## Packages
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+library(foreign)
+library(tidyverse)
+library(ggdag)
+library(dplyr)
+library(tinytex)
+library(jtools)
+library(huxtable)
+library(summarytools)
+library(ggstance)
+library(pwr)
+library(knitr)
+library(lemon)
+library(AER)
+library(rdrobust)
+library(lubridate)
+```
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+knit_print.data.frame <- lemon_print
+```
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+st_options(plain.ascii = FALSE, style = "rmarkdown")
+st_css()
+```
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+theUrl_ca4b <- "https://surfdrive.surf.nl/files/index.php/s/JAo4jnvf042xQXt/download"
+fertility <- read.dta (file = theUrl_ca4b)
+```
+
+# II. What to submit
+
+## 1. Mechanism
+
+Y(0,i) = relatively lower levels of fertility, standard number of abortions and quicker re-entry into the labor force
+Y(1,i) = increased fertility, reduction in abortions and slower re-entry into the labor force
+
+Child benefits after a birth raises fertility because it raises expendable income, which means the parents need to work less hours to satisfy the same (monetary) needs. It also lowers the bar to sustain a child's upbringing, making it more likely that the parents decide in favour of getting more children.
+
+## 2. Descriptives
+
+(a)
+
+```{r}
+abspermonth <- fertility %>% group_by(month(fertility$abortions)) %>% tally()
+mean(abspermonth$n)
+
+```
+
+Probably not right (as the paper says 6,725) but no idea how to fix it.
+
+(b)
+
+```{r}
+conpermonth <- fertility %>% group_by(month(fertility$conceptions)) %>% tally()
+mean(conpermonth$n)
+```
+
+B relies on A, no idea what I'm doing wrong with A so can't do B. Wanted to get the average conceptions, multiply average abortions by 1.14 (as it says in the question) and then compare percentages.
+
+(c)
+
+```{r}
+fertility$date1 <- fertility$calendar_year+(fertility$calendar_month/12)
+fertility$date1 <- fertility$date1-(1/12)
+fertility$date1 <- as.yearmon(fertility$date1)
+```
+
+```{r}
+fertility$date1 <- as.Date(fertility$date1)
+min(fertility$date1, na.rm=TRUE)
+max(fertility$date1, na.rm=TRUE)
+```
+
+(d)
+
+```{r}
+plot(fertility$date1, fertility$abortions,
+     xlab="Date", ylab="Average number of abortions",
+     ylim = c(0, 10000))
+abline(lm(fertility$abortions ~ fertility$date1))
+```
+
+## 3. Graphical evidence
+
+(a)
+
+
+```{r}
+with(fertility, rdplot(y=conceptions, p=1, x=month_of_conception[0:69], c=40, nbins = 35,
+                     title="Discontinuity in fertility",
+                     x.label="days relative to July 1, 2007",
+                     y.label="number of conceptions"))
+```
+
+Don't understand why I'm getting this error. Think the rest is correct.
+
+(b)
+
+Can't do this without the graph
+
+(c)
+
+```{r}
+with(fertility, rdplot(y=abortions, p=1, x=month_of_birth[0:69], c=40, nbins = 35,
+                     title="Discontinuity in abortions",
+                     x.label="days relative to July 1, 2007",
+                     y.label="number of abortions"))
+```
+
+Don't understand the error.
+
+## 4. Test of treatment effect
+
+```{r}
+reg4b1 <- lm(ln_conceptions ~ treatment_dummy, data=fertility)
+summ(reg4b1)
+```
+
+```{r}
+reg4b2 <- lm(ln_abortions ~ treatment_dummy, data=fertility)
+summ(reg4b2)
+```
+
+Naïve regressions for both outcome variables.
+
+Don't know how to do the rest without running into the same errors.
+
+
+
+
