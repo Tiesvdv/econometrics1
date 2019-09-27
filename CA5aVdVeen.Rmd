@@ -1,0 +1,162 @@
+---
+title: "CA5aVdVeen"
+author: "Ties van der Veen"
+date: "27-9-2019"
+output: pdf_document
+---
+
+## Rebecca Costello - Ties van der Veen - Niels van Opstal
+
+# I. Introduction to the assignment
+
+## Packages
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+library(foreign)
+library(tidyverse)
+library(ggdag)
+library(dplyr)
+library(tinytex)
+library(jtools)
+library(huxtable)
+library(summarytools)
+library(ggstance)
+library(pwr)
+library(knitr)
+library(lemon)
+library(AER)
+library(lubridate)
+```
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+knit_print.data.frame <- lemon_print
+```
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+st_options(plain.ascii = FALSE, style = "rmarkdown")
+st_css()
+```
+
+## Data
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+theUrl_ca5a <- "https://surfdrive.surf.nl/files/index.php/s/7Mn58Z3iMOJWwTV/download"
+minwage <- read.dta (file = theUrl_ca5a)
+```
+
+# II. Potential outcomes
+
+(a)
+
+Y(0,i) = no increase in minimum wage, no increase in employees.
+
+Y(1,i) = increase in minimum wage, increase in employees.
+
+(b)
+
+Employment is affected by a change in minimum wage because of the costs for the employer. Higher costs per employee per hour could lead to a necessity of firing an employee to keep costs similar to what they were before the change. On the other hand, a higher minimum wage means that all firms that paid a wage inbetween the previous minimum and the new one (so above 4,25 but below 5,05) will all be at a level playing field. This removes competition on employee cost level, making this a less profitable area to cut costs in. Thus, employment would not decrease. 
+
+# III. Descriptive statistics
+
+(a)
+
+```{r}
+minwage %>%
+  group_by(time, sample, state) %>%
+  summarise(number = n())
+```
+As we can see in this table, the overall number of restaurants interviewed is 410 (add up all results at time 0 or 1). Number of restaurants within the relevant sample for wave 1 is 285 + 66 = 351. 285 of the relevant restaurants are located in NJ, rest (66) is in PA.
+
+(b)
+
+```{r}
+minwage_sample <- minwage[minwage$sample==1, ]
+min(minwage_sample$fte, na.rm=TRUE)
+max(minwage_sample$fte, na.rm=TRUE)
+```
+So the minimum is 3, and the maximum is 80 fte.
+
+(c)
+
+```{r}
+min(minwage_sample$wage_st, na.rm=TRUE)
+max(minwage_sample$wage_st, na.rm=TRUE)
+```
+So the minimum is 4.25, and the maximum is 6.25.
+
+# IV. D-I-D plot
+
+```{r}
+minwage_sample$state <- as.factor(minwage_sample$state)
+
+ggplot(minwage_sample, aes(time, wage_st, col = state)) +
+  stat_summary(geom = 'line') +
+  theme_minimal()
+```
+
+```{r}
+minwage_sample$state <- as.factor(minwage_sample$state)
+
+ggplot(minwage_sample, aes(time, fte, col = state)) +
+  stat_summary(geom = 'line') +
+  theme_minimal()
+```
+
+# V. D-I-D by hand
+
+```{r}
+NJ0=sapply(subset(minwage_sample, time==0 & state==1, select=wage_st), mean)
+NJ1=sapply(subset(minwage_sample, time==1 & state==1, select=wage_st), mean)
+PE0=sapply(subset(minwage_sample, time==0 & state==0, select=wage_st), mean)
+PE1=sapply(subset(minwage_sample, time==1 & state==0, select=wage_st), mean)
+```
+
+```{r}
+(NJ1-NJ0)-(PE1-PE0)
+```
+
+There is a positive difference in the differences of starting wage between NJ and PE. This tells us that either NJ's wages increased, PE's wages decreased, or both. Either way, NJ's new wages are higher than PE's.
+
+This can be considered a causal estimate if all other factors are kept consistent.
+
+```{r}
+PE0=sapply(subset(minwage_sample, time==0 & state==0, select=fte), mean)
+PE1=sapply(subset(minwage_sample, time==1 & state==0, select=fte), mean)
+NJ0=sapply(subset(minwage_sample, time==0 & state==1, select=fte), mean)
+NJ1=sapply(subset(minwage_sample, time==1 & state==1, select=fte), mean)
+(NJ1-NJ0)-(PE1-PE0)
+```
+
+Here we see that the fte is relatively higher in NJ after the minimum wage change than in PE.
+
+# VI. D-I-D regression
+
+(a)
+
+```{r}
+didwage <- lm(wage_st ~ time*state, data=minwage_sample)
+summ(didwage)
+```
+
+```{r}
+didfte <- lm(fte ~ time*state, data=minwage_sample)
+summ(didfte)
+```
+
+As can be seen from these regression estimates (time:state1), the earlier predictions were accurate. However, the one for fte is not statistically significant.
+
+(b)
+
+```{r}
+didwage <- lm(wage_st ~ time*state + co_owned + factor(chain), data=minwage_sample)
+summ(didwage)
+```
+
+```{r}
+didfte <- lm(fte ~ time*state + co_owned + factor(chain), data=minwage_sample)
+summ(didfte)
+```
+
+(c)
+
+For starting wage, there is no change other than a minor one in the t-value. For fte, there is a change in the standard error, t-value and significance, but these changes do not change the interpretation. We did not expect a change in results, as that would signal significant differences between these stores and their hiring policies, which would be odd seeing as they are in the same branch of business.
