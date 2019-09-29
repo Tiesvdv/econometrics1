@@ -1,0 +1,144 @@
+---
+title: "CA5bVdVeen"
+author: "Ties van der Veen"
+date: "29-9-2019"
+output: pdf_document
+---
+
+## Rebecca Costello - Ties van der Veen - Niels van Opstal
+
+# I. Introduction to the assignment
+
+## Packages
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+library(foreign)
+library(tidyverse)
+library(ggdag)
+library(dplyr)
+library(tinytex)
+library(jtools)
+library(huxtable)
+library(summarytools)
+library(ggstance)
+library(pwr)
+library(knitr)
+library(lemon)
+library(AER)
+library(lubridate)
+```
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+knit_print.data.frame <- lemon_print
+```
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+st_options(plain.ascii = FALSE, style = "rmarkdown")
+st_css()
+```
+
+## Data
+
+```{r}
+theUrl_ca5b <- "https://surfdrive.surf.nl/files/index.php/s/76yJI80rr6J9eYN/download"
+crime <- read.dta (file = theUrl_ca5b)
+```
+
+# II. What to submit
+
+## 1. Mechanism
+
+(a)
+
+Y(0,i) = registered and perceived crime stay at the same level
+
+Y(1,i) = registered and perceived crime fall to a lower level
+
+(b)
+
+Regulating prostitution allows for more control and safety measures. This protects the sex workers there, reducing crime and any opportunity for shady business. Everything happens within the law, which also means the people working there will be less afraid of police/law enforces coming around to check stuff out.
+
+## 2. Descriptives
+
+(a)
+
+```{r}
+crime$citytype <- 3
+crime$citytype[crime$city1 == 1] <- 1
+crime$citytype[crime$city1 == 2] <- 1
+crime$citytype[crime$city1 == 3] <- 1
+crime$citytype[crime$city1 == 4] <- 2
+crime$citytype[crime$city1 == 21] <- 2
+crime$citytype[crime$city1 == 12] <- 2
+crime$citytype[crime$city1 == 14] <- 2
+crime$citytype[crime$city1 == 10] <- 2
+crime$citytype[crime$city1 == 6] <- 2
+```
+
+No idea how to get summary for groups
+
+(b)
+
+Can't do this without a
+
+## 3. Statistical test of a treatment effect
+
+(a)
+
+$Y_{i, s, t}$ = $\alpha$ + $\delta$ ($TREAT_{s}$ x $POST_{t}$) + $\beta$ $TREAT_{s}$ + $\gamma$ $POST_{t}$ + $\varepsilon_{i, s ,t}$
+
+(b)
+
+```{r}
+crime25 <- lm(lnrapesexaN ~ opening + logpopmale1565 + logpopdens + inkhh + educhpc + nondutchpc + insurWWAO +
+mayorCDA + mayorCU + mayorD66 + mayorVVD, data=crime)
+summ(crime25)
+```
+
+What variable is supposed to be in the factor function? 
+
+(c)
+
+```{r}
+sexabr <- lm(lnrapesexaN ~ opening, data=crime)
+summ(sexabr)
+```
+
+
+If the estimated effect doesn't change, it might mean that all other factors don't actually influence it?
+
+(d)
+
+Falsification is used to test for an effect that should not be there. So here we would be able to see that the treatment variable and outcome are not related.
+
+```{r}
+theft <- lm(lnsimtheftN ~ opening + logpopmale1565 + logpopdens + inkhh + educhpc + nondutchpc + insurWWAO +
+mayorCDA + mayorCU + mayorD66 + mayorVVD, data=crime)
+summ(theft)
+```
+
+Effect is small which is good, but this regression is incorrect as it needs the correct one from a.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
